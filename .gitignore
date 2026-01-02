@@ -10,3 +10,6 @@ config/
 # System
 .DS_Store
 Thumbs.db
+
+# Local Apps (extracted)
+apps/
