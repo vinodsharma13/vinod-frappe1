@@ -1,8 +1,14 @@
 version: "3"
 
+x-custom-build: &custom-build
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: frappe/erpnext:custom-v15.93.1
+
 services:
   backend:
-    image: frappe/erpnext:v15.93.1
+    <<: *custom-build
     deploy:
       restart_policy:
         condition: on-failure
@@ -21,7 +27,7 @@ services:
       - coolify
 
   configurator:
-    image: frappe/erpnext:v15.93.1
+    <<: *custom-build
     deploy:
       restart_policy:
         condition: none
@@ -50,7 +56,7 @@ services:
       - coolify
 
   create-site:
-    image: frappe/erpnext:v15.93.1
+    <<: *custom-build
     deploy:
       restart_policy:
         condition: none
@@ -87,7 +93,7 @@ services:
       - coolify
 
   frontend:
-    image: frappe/erpnext:v15.93.1
+    <<: *custom-build
     depends_on:
       - websocket
     deploy:
@@ -111,7 +117,7 @@ services:
       - coolify
 
   queue-long:
-    image: frappe/erpnext:v15.93.1
+    <<: *custom-build
     deploy:
       restart_policy:
         condition: on-failure
@@ -130,7 +136,7 @@ services:
       - coolify
 
   queue-short:
-    image: frappe/erpnext:v15.93.1
+    <<: *custom-build
     deploy:
       restart_policy:
         condition: on-failure
@@ -169,7 +175,7 @@ services:
       - coolify
 
   scheduler:
-    image: frappe/erpnext:v15.93.1
+    <<: *custom-build
     deploy:
       restart_policy:
         condition: on-failure
@@ -186,7 +192,7 @@ services:
       - coolify
 
   websocket:
-    image: frappe/erpnext:v15.93.1
+    <<: *custom-build
     deploy:
       restart_policy:
         condition: on-failure
@@ -208,6 +214,7 @@ volumes:
   redis-cache-data:
   sites:
   logs:
+  db-data:
 
 networks:
   coolify:

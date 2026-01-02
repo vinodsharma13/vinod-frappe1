@@ -12,4 +12,6 @@ config/
 Thumbs.db
 
 # Local Apps (extracted)
-apps/
+apps/*
+!apps/custom_app/
+
