@@ -17,6 +17,8 @@ services:
       DB_PORT: "3306"
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    networks:
+      - coolify
 
   configurator:
     image: frappe/erpnext:v15.93.1
@@ -44,6 +46,8 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - coolify
 
   create-site:
     image: frappe/erpnext:v15.93.1
@@ -58,7 +62,7 @@ services:
       - -c
     command:
       - >
-        wait-for-it -t 120 db:3306;
+        wait-for-it -t 120 $$DB_HOST:3306;
         wait-for-it -t 120 redis-cache:6379;
         wait-for-it -t 120 redis-queue:6379;
         export start=`date +%s`;
@@ -78,6 +82,9 @@ services:
     environment:
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      DB_HOST: ${DB_HOST}
+    networks:
+      - coolify
 
   frontend:
     image: frappe/erpnext:v15.93.1
@@ -100,6 +107,8 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - coolify
 
   queue-long:
     image: frappe/erpnext:v15.93.1
@@ -117,6 +126,8 @@ services:
     environment:
       FRAPPE_REDIS_CACHE: redis://redis-cache:6379
       FRAPPE_REDIS_QUEUE: redis://redis-queue:6379
+    networks:
+      - coolify
 
   queue-short:
     image: frappe/erpnext:v15.93.1
@@ -134,6 +145,8 @@ services:
     environment:
       FRAPPE_REDIS_CACHE: redis://redis-cache:6379
       FRAPPE_REDIS_QUEUE: redis://redis-queue:6379
+    networks:
+      - coolify
 
   redis-queue:
     image: redis:6.2-alpine
@@ -142,6 +155,8 @@ services:
         condition: on-failure
     volumes:
       - redis-queue-data:/data
+    networks:
+      - coolify
 
   redis-cache:
     image: redis:6.2-alpine
@@ -150,6 +165,8 @@ services:
         condition: on-failure
     volumes:
       - redis-cache-data:/data
+    networks:
+      - coolify
 
   scheduler:
     image: frappe/erpnext:v15.93.1
@@ -165,6 +182,8 @@ services:
     environment:
       FRAPPE_REDIS_CACHE: redis://redis-cache:6379
       FRAPPE_REDIS_QUEUE: redis://redis-queue:6379
+    networks:
+      - coolify
 
   websocket:
     image: frappe/erpnext:v15.93.1
@@ -181,6 +200,8 @@ services:
       FRAPPE_REDIS_CACHE: redis://redis-cache:6379
       FRAPPE_REDIS_QUEUE: redis://redis-queue:6379
       FRAPPE_REDIS_SOCKETIO: redis://redis-queue:6379
+    networks:
+      - coolify
       
 volumes:
   redis-queue-data:
@@ -189,6 +210,5 @@ volumes:
   logs:
 
 networks:
-  default:
+  coolify:
     external: true
-    name: coolify
