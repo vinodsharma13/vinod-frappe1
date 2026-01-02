@@ -1,0 +1,12 @@
+# Docker
+docker-compose.override.yml
+.env
+
+# Frappe/Bench Generated
+sites/
+logs/
+config/
+
+# System
+.DS_Store
+Thumbs.db
