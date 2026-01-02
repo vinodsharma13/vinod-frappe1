@@ -92,6 +92,29 @@ services:
     networks:
       - coolify
 
+  # Automate App Installation (For existing sites)
+  install-apps:
+    <<: *custom-build
+    deploy:
+      restart_policy:
+        condition: none
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        wait-for-it -t 120 backend:8000;
+        echo "Backend is up, attempting to install apps...";
+        bench --site frontend install-app custom_app || echo "App already installed";
+        bench --site frontend migrate;
+    environment:
+      DB_HOST: ${DB_HOST}
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - coolify
+
   frontend:
     <<: *custom-build
     depends_on:
