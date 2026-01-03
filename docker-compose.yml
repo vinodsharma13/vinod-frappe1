@@ -15,6 +15,8 @@ services:
     depends_on:
       configurator:
         condition: service_completed_successfully
+      create-site:
+        condition: service_completed_successfully
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
@@ -84,7 +86,12 @@ services:
           fi
         done;
         echo "sites/common_site_config.json found";
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=${ADMIN_PASSWORD} --db-root-username=root --db-root-password=${DB_ROOT_PASSWORD} --install-app erpnext --install-app custom_app --set-default frontend;
+        if [ ! -d "sites/frontend" ]; then
+          echo "Site 'frontend' does not exist. Creating new site...";
+          bench new-site --mariadb-user-host-login-scope='%' --admin-password=${ADMIN_PASSWORD} --db-root-username=root --db-root-password=${DB_ROOT_PASSWORD} --install-app erpnext --install-app custom_app --set-default frontend;
+        else
+          echo "Site 'frontend' already exists. Skipping creation.";
+        fi
     environment:
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
@@ -92,23 +99,35 @@ services:
     networks:
       - coolify
 
-  # Automate App Installation (For existing sites)
   install-apps:
     <<: *custom-build
     deploy:
       restart_policy:
         condition: none
+    depends_on:
+      create-site:
+        condition: service_completed_successfully
+      backend:
+        condition: service_started
     entrypoint:
       - bash
       - -c
     command:
       - >
         wait-for-it -t 120 backend:8000;
-        echo "Backend is up, attempting to install apps...";
-        bench --site frontend install-app custom_app || echo "App already installed";
-        bench --site frontend migrate;
+        echo "Backend is up. Checking app installation...";
+        SITE_NAME=${SITE_NAME:-frontend};
+        if bench --site $$SITE_NAME list-apps | grep -q "custom_app"; then
+          echo "Success: 'custom_app' is already installed.";
+        else
+          echo "Installing 'custom_app'...";
+          bench --site $$SITE_NAME install-app custom_app;
+        fi;
+        echo "Running migrations...";
+        bench --site $$SITE_NAME migrate;
     environment:
       DB_HOST: ${DB_HOST}
+      SITE_NAME: "frontend"
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
@@ -148,7 +167,7 @@ services:
       - bench
       - worker
       - --queue
-      - long,default,short
+      - long
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
@@ -237,7 +256,6 @@ volumes:
   redis-cache-data:
   sites:
   logs:
-  db-data:
 
 networks:
   coolify:
